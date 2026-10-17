@@ -54,13 +54,14 @@ than a bare "unknown function":
   interpreter and compiled code.
 
 Full status, with what was measured and what remains:
-[godot-aot-staged-build-lacks-godot-natives](https://github.com/rjungemann/turmeric/blob/main/docs/reported/godot-aot-staged-build-lacks-godot-natives.md).
+[godot-aot-staged-build-lacks-godot-natives](https://github.com/turmeric-lang/turmeric/blob/main/docs/reported/godot-aot-staged-build-lacks-godot-natives.md).
 
 Plans, in the turmeric repo:
-[the completed v1 plan](https://github.com/rjungemann/turmeric/blob/main/docs/archive/godot-language-binding-plan.md)
+[the completed v1 plan](https://github.com/turmeric-lang/turmeric/blob/main/docs/archive/godot-language-binding-plan.md)
 and
-[the current refresh](https://github.com/rjungemann/turmeric/blob/main/docs/upcoming/godot-binding-refresh-plan.md),
-which covers what came after it and sequences the remaining work.
+[the refresh](https://github.com/turmeric-lang/turmeric/blob/main/docs/archive/godot-binding-refresh-plan.md),
+which covers what came after it. The refresh is complete, and the work left
+over is tracked in the open reports linked from its status line.
 
 ## Script-side natives
 
@@ -76,7 +77,7 @@ which covers what came after it and sequences the remaining work.
 ## Build
 
 The GDExtension statically links `libturi.a` from the sibling
-[turmeric](https://github.com/rjungemann/turmeric) repo, so build that first,
+[turmeric](https://github.com/turmeric-lang/turmeric) repo, so build that first,
 then drive the standard godot-cpp SCons setup.
 
 **Prerequisites**
