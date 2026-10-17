@@ -33,7 +33,7 @@ on:
   workflow_dispatch:
 
 env:
-  TURMERIC_REPO: https://github.com/rjungemann/turmeric.git
+  TURMERIC_REPO: https://github.com/turmeric-lang/turmeric.git
   # The compiler checkout lives INSIDE the workspace (see the checkout step),
   # so SConstruct's default of ../turmeric no longer finds it. It reads this.
   #
@@ -104,7 +104,7 @@ jobs:
       - name: Checkout sibling turmeric
         uses: actions/checkout@v4
         with:
-          repository: rjungemann/turmeric
+          repository: turmeric-lang/turmeric
           ref: v0.44.2
           path: turmeric
 
