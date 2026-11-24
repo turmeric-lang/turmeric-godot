@@ -14,7 +14,7 @@
 
     ;; Position: curated wrappers.
     (godot-println "[classdb_call] set_position (100, 50)")
-    (node/set-position self (godot-vec2 100.0 50.0))
+    (node/set-position self (node/vec2 100.0 50.0))
 
     ;; Typed accessors (post-typed-natives upgrade) -- the wrapper returns
     ;; :float now, so we can let-bind components into typed locals.
@@ -25,21 +25,22 @@
       (godot-println "[classdb_call] read position back via node/get-position"))
 
     ;; Modulate: curated wrappers.
-    (node/set-modulate self (godot-color 0.5 0.25 0.75 1.0))
+    (node/set-modulate self (node/color 0.5 0.25 0.75 1.0))
     (let [mod (node/get-modulate self)]
       (godot-println "[classdb_call] modulate round-trip via node/...:")
-      (godot-color-r mod)
-      (godot-color-g mod)
-      (godot-color-b mod)
-      (godot-color-a mod))
+      (node/color-r mod)
+      (node/color-g mod)
+      (node/color-b mod)
+      (node/color-a mod))
 
     ;; Typed cstr return via the prelude (godot-call-c under the hood).
     (let [name (node/get-name self)]
       (godot-println "[classdb_call] my get_name returned:")
       (godot-println name))
 
-    ;; Traversal: curated wrapper.
+    ;; Traversal: curated wrapper. It returns a NodeHandle, so the null
+    ;; test and the raw-handle call both go through nh->int.
     (let [sib (node/get-node self "Sibling")]
-      (if (= sib 0)
+      (if (= (nh->int sib) 0)
         (godot-println "[classdb_call] no Sibling node found (expected on a bare scene)")
-        (godot-println (godot-call sib "get_name"))))))
+        (godot-println (node/get-name (nh->int sib)))))))

@@ -4,7 +4,10 @@ extends SceneTree
 # G2 :exports — drives exports.tur through the Variant API and asserts that
 # the inspector round-trip (set / get / default) works end-to-end.
 
+var fail_count := 0
+
 func _fail(msg: String) -> void:
+	fail_count += 1
 	printerr("[exports.gd] FAIL: ", msg)
 
 func _init() -> void:
@@ -12,7 +15,7 @@ func _init() -> void:
 	var script = load("res://scripts/exports.tur")
 	if script == null:
 		_fail("load returned null")
-		quit(); return
+		quit(1); return
 
 	var node := Node.new()
 	node.set_script(script)
@@ -29,6 +32,11 @@ func _init() -> void:
 	var alive_default: bool = node.get("alive")
 	if not alive_default:
 		_fail("default alive: expected true, got %s" % alive_default)
+	# A bool declared with an int default takes it by truthiness.
+	if node.get("armed") != true:
+		_fail("default armed (declared as 1): expected true, got %s" % node.get("armed"))
+	if node.get("muted") != false:
+		_fail("default muted (declared as 0): expected false, got %s" % node.get("muted"))
 	print("[exports.gd] defaults: speed=%s health=%s alive=%s" %
 		[speed_default, health_default, alive_default])
 
@@ -79,6 +87,10 @@ func _init() -> void:
 	print("[exports.gd] get_property_list() lists: ",
 		["speed", "health", "alive", "nick"].map(func(n): return n + "=" + str(seen.get(n, -1))))
 
-	print("[exports.gd] all assertions passed")
 	node.queue_free()
-	quit()
+	if fail_count == 0:
+		print("[exports.gd] all assertions passed")
+		quit(0)
+	else:
+		printerr("[exports.gd] %d FAILURES" % fail_count)
+		quit(1)

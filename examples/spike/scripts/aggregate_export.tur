@@ -8,13 +8,15 @@
 
 (defn _ready []
   (let [self (node/self)
-        ofs  (godot-prop-get "offset")
-        tint (godot-prop-get "tint")
+;; godot-prop-get is typed :int -- it cannot know what the property
+        ;; holds -- so the arena handle is given its real type here.
+        ofs  (:: (godot-prop-get "offset") :Vec2Handle)
+        tint (:: (godot-prop-get "tint") :ColorHandle)
         ox   (node/vec2-x ofs)
         oy   (node/vec2-y ofs)
         tr   (node/color-r tint)]
     (godot-println "[agg-export] read vec2 + color back from inspector storage")
     ;; Apply the offset to self.position so the driver can assert
     ;; the round-trip landed.
-    (node/set-position self (godot-vec2 ox oy))
+    (node/set-position self (node/vec2 ox oy))
     (node/set-modulate self tint)))

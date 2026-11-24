@@ -6,23 +6,28 @@
 ;; else (node2d/set-skew, node2d/set-scale, ...).
 
 (defn _ready []
-  (let [self (node/self)]
+  ;; The curated prelude takes the raw :int self; the generated wrappers
+  ;; take the class's own handle, and an inherited method wants the handle
+  ;; of the class that declares it -- reached by the generated up-coercion.
+  (let [self    (node/self)
+        self-2d (:: self :Node2DHandle)
+        self-ci (node2d-handle->canvasitem-handle self-2d)]
     ;; Curated prelude wrapper (short form).
-    (node/set-position self (godot-vec2 10.0 20.0))
+    (node/set-position self (node/vec2 10.0 20.0))
 
     ;; Codegen v2: void wrappers via godot-call-v.
-    (node2d/set-skew self 0.1)
-    (node/set-scale self (godot-vec2 2.0 0.5))
+    (node2d/set-skew self-2d 0.1)
+    (node/set-scale self (node/vec2 2.0 0.5))
 
     ;; Codegen v2: honest :float-returning wrapper via godot-call-f.
     ;; The let-binding types `skew` as :float so the curly-infix arithmetic
     ;; round-trips through the type system without TUR-E0707.
-    (let [skew (node2d/get-skew self)
+    (let [skew (node2d/get-skew self-2d)
           doubled (* skew 2.0)]
       (godot-println "[generated_facade] skew round-trip ok (typed float)"))
 
     ;; Codegen v2: honest :bool-returning wrapper via godot-call-b.
     ;; Used directly in (if ...) -- no (= h 0) workaround needed.
-    (if (canvasitem/is-y-sort-enabled self)
+    (if (canvasitem/is-y-sort-enabled self-ci)
       (godot-println "[generated_facade] y-sort enabled (unexpected on default)")
       (godot-println "[generated_facade] y-sort disabled (default; typed-bool predicate works)"))))
