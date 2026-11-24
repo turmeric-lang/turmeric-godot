@@ -11,7 +11,7 @@
 (defn _ready []
   (let [self (node/self)]
     ;; Set position so we have a known transform to read back.
-    (node/set-position self (godot-vec2 42.0 17.0))
+    (node/set-position self (node/vec2 42.0 17.0))
     (godot-call self "set_rotation" 0.25)
 
     ;; Transform2D round-trip.

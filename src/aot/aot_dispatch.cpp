@@ -11,10 +11,6 @@
 #include <cstdint>
 #include <cstring>
 
-extern "C" {
-#include "runtime/ffi_dispatch_thunk.h"
-}
-
 namespace godot {
 namespace aot {
 
@@ -129,16 +125,14 @@ bool dispatch_aot_call_with(const AotImage *image,
     }
 
     // Per-call scratch. The CharString[] holds utf8 byte buffers for any
-    // :cstr arg; the pointers in i_vals must not outlive these. arg_chars
-    // is the class string (n_args of 'i'/'f') that tur_ffi_thunk_call uses
-    // to select the trampoline.
+    // :cstr arg; the pointers in i_vals must not outlive these. Arg k goes
+    // in i_vals[k] or f_vals[k] by its class -- the layout the export's
+    // __ffi shim reads.
     int64_t   i_vals[kAotMaxArity] = {0};
     double    f_vals[kAotMaxArity] = {0};
     CharString str_owners[kAotMaxArity];
-    char      arg_chars[kAotMaxArity + 1] = {0};
 
     for (uint8_t i = 0; i < e->n_args; i++) {
-        arg_chars[i] = aot_type_class(e->arg_types[i]);
         Variant v(p_args[i]);
         switch (e->arg_types[i]) {
             case AotType::Float:
@@ -162,18 +156,13 @@ bool dispatch_aot_call_with(const AotImage *image,
                 break;
         }
     }
-    arg_chars[e->n_args] = '\0';
-
     int64_t out_i = 0;
     double  out_f = 0.0;
-    char ret_class = aot_type_class(e->ret_type);
-    int rc = tur_ffi_thunk_call(ret_class, arg_chars, e->n_args, e->fn_ptr,
-                                i_vals, f_vals, &out_i, &out_f);
-    if (rc != 0) {
-        // Shape not in the pre-generated table. Don't fall back -- the
-        // interpreter can't recover from this either (the table covers
-        // every shape the compiler can emit at the supported arities), so
-        // a clean error beats silent reinterpretation.
+    if (!e->ffi_shim) {
+        // No `<mangled>__ffi` in the staged library. `tur build --shared`
+        // emits one per scalar-only export, so this is a library from a
+        // compiler that predates the shims. Don't fall back -- a clean
+        // error beats silent reinterpretation.
         if (out_error) {
             out_error->error    = GDEXTENSION_CALL_ERROR_INVALID_METHOD;
             out_error->argument = 0;
@@ -181,6 +170,7 @@ bool dispatch_aot_call_with(const AotImage *image,
         }
         return true;
     }
+    e->ffi_shim(i_vals, f_vals, &out_i, &out_f);
 
     if (out_return) {
         *out_return = scalar_to_variant(e->ret_type, out_i, out_f);

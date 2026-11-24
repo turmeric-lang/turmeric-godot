@@ -3836,8 +3836,6 @@ const char *TG_GENERATED_FACADE_SOURCE = R"TG_GEN(
   (:: (godot-call (:: self :int) "duplicate" subresources) :ResourceHandle))
 (defn resource/on-changed [self : ResourceHandle handler : (fn [] void)] : void
   (godot-connect-typed (:: self :int) "changed" handler))
-(defn resource/emit-changed [self : ResourceHandle] : void
-  (godot-call-v (:: self :int) "emit_signal" "changed"))
 (defn resource/on-setup-local-to-scene-requested [self : ResourceHandle handler : (fn [] void)] : void
   (godot-connect-typed (:: self :int) "setup_local_to_scene_requested" handler))
 (defn resource/emit-setup-local-to-scene-requested [self : ResourceHandle] : void
