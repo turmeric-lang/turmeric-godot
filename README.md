@@ -31,7 +31,9 @@ and falls back to the interpreter.
 
 > **Windows** needs a `tur` newer than v0.46.0 for AOT. On macOS and Linux the
 > staged library leaves the `godot_*` symbols unresolved until `dlopen` binds
-> them against the running extension; PE resolves every import at link time,
+> them against the running extension (on Linux the extension first promotes
+> itself to the global symbol scope, since Godot loads it without
+> `RTLD_GLOBAL`); PE resolves every import at link time,
 > so the stager writes a `:build-opts` block linking the staged library
 > against this extension's own DLL -- and `tur build --shared` only honours
 > that block from the fix in turmeric's `cmd_build_multi_files` onward. With
@@ -152,6 +154,27 @@ Either way you should see `[turmeric-godot] initialize(level=...)`, the
 `registered Turmeric script language + resource format` trace, and (at editor
 level) a `libturi smoke: (+ 1 2) = 3 : int` line confirming the
 statically-linked runtime evaluates Turmeric.
+
+## Run the drivers
+
+`examples/spike/scripts/*.gd` and `examples/paddle-pong-tur/scripts/pong_driver.gd`
+are headless drivers: each attaches a `.tur` script to a node and asserts on
+what it did. One command runs them all, and CI runs the same thing on the
+Linux x86_64 leg:
+
+```sh
+GODOT=/path/to/godot tools/run-drivers.sh
+GODOT=/path/to/godot TUR_BIN=/path/to/tur tools/run-drivers.sh   # plus pong under AOT
+```
+
+A driver passes when it exits 0 and prints no `FAIL` or `SCRIPT ERROR` line.
+The AOT pass also requires that `ball.tur` and `paddle.tur` report dispatching
+through AOT -- a staged library that fails to load falls back to the
+interpreter, and the assertions alone cannot tell.
+
+When you add a smoke script, give it a driver, or add it to
+`driverless_scripts.gd` if it only prints: a script nothing loads stops
+elaborating without anyone noticing.
 
 ## Layout
 

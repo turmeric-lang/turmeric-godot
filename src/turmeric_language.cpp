@@ -298,7 +298,13 @@ static Variant tg_turi_to_variant_typed(TuriValue v, Variant::Type t) {
             if (v.tag == TURI_FLOAT) return (int64_t)v.as_float;
             return (int64_t)0;
         case Variant::BOOL:
-            return (v.tag == TURI_BOOL) ? (bool)v.as_bool : false;
+            // An int default is taken by truthiness, the way FLOAT and INT
+            // above take each other. It used to be dropped: `(godot-export
+            // "alive" "bool" 1)` declared a property whose default was
+            // false, with no diagnostic.
+            if (v.tag == TURI_BOOL) return (bool)v.as_bool;
+            if (v.tag == TURI_INT)  return v.as_int != 0;
+            return false;
         case Variant::STRING:
             return String((v.tag == TURI_CSTR && v.as_cstr) ? v.as_cstr : "");
         case Variant::VECTOR2:

@@ -8,7 +8,7 @@
   (let [d (dict-new)]
     (dict-set-i d "frame"   42)
     (dict-set-f d "scale"   1.25)
-    (dict-set-b d "active"  1)
+    (dict-set-b d "active"  true)
     (dict-set-c d "label"   "hello")
     (godot-println "[t3c] dict frame:")
     (godot-println (godot-num->str (dict-get-i d "frame")))

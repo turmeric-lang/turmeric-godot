@@ -526,6 +526,11 @@ def gen_emit_signal_wrapper(class_name: str, signal: dict) -> str:
     return f"(defn {wrap} [{' '.join(param_list)}] : void\n  {body})"
 
 
+def _defn_name(wrapper: str) -> str:
+    """The name a generated `(defn NAME ...)` wrapper defines."""
+    return wrapper.split(None, 2)[1]
+
+
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
     repo = os.path.dirname(here)
@@ -571,10 +576,24 @@ def main():
         # T4.C -- emit-side companion: per-signal (class/emit-SIGNAL) wrapper
         # paired with the connect-side one. Lets a caller emit a typed payload
         # on any Object handle instead of only on the current instance.
+        # A signal wrapper can land on a name a method already took:
+        # Resource has both the method emit_changed and the signal changed,
+        # and each wants (resource/emit-changed). The method wrapper wins
+        # -- the engine's own method is the one that emits the signal --
+        # and the duplicate is dropped, because a second defn of one name
+        # is an elaboration error that takes the whole facade down with it.
+        taken = {_defn_name(w) for w in wrappers}
         signal_wrappers = []
         for s in c.get("signals", []):
-            signal_wrappers.append(gen_signal_wrapper(cname, s))
-            signal_wrappers.append(gen_emit_signal_wrapper(cname, s))
+            for w in (gen_signal_wrapper(cname, s),
+                      gen_emit_signal_wrapper(cname, s)):
+                name = _defn_name(w)
+                if name in taken:
+                    print(f"NOTE: {name}: signal wrapper dropped, a method "
+                          f"wrapper already defines it", file=sys.stderr)
+                    continue
+                taken.add(name)
+                signal_wrappers.append(w)
         if not wrappers and not signal_wrappers:
             continue
         # signal_wrappers contains both connect-side and emit-side; the

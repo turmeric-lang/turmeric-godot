@@ -61,6 +61,12 @@ struct AotExport {
     std::string name;      // defn name (the Turmeric-visible identifier)
     std::string mangled;   // C symbol name actually dlsym'd
     void       *fn_ptr = nullptr;
+    // The export's `<mangled>__ffi` shim, which `tur build --shared` emits
+    // beside every export whose slots are all scalars: it reads arg k from
+    // iv[k] or fv[k] by class and writes the result to *out_i or *out_f.
+    // Null when the library carries none; dispatch then declines the call.
+    void      (*ffi_shim)(const int64_t *iv, const double *fv,
+                          int64_t *out_i, double *out_f) = nullptr;
 
     AotType ret_type = AotType::Unknown;
     AotType arg_types[kAotMaxArity] = {};

@@ -7,7 +7,11 @@
 
 (godot-export "speed"     "float" 200.0)
 (godot-export "health"    "int"   100)
-(godot-export "alive"     "bool"  1)
+(godot-export "alive"     "bool"  true)
+;; An int default for a bool is taken by truthiness (it used to be dropped,
+;; leaving the property false).
+(godot-export "armed"     "bool"  1)
+(godot-export "muted"     "bool"  0)
 (godot-export "nick"      "string" "anon")  ; declared; reading from script returns nil in v1
 
 (defn _ready []

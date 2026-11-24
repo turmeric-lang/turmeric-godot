@@ -22,6 +22,35 @@ namespace aot {
 
 namespace {
 
+#if !defined(_WIN32) && !defined(__APPLE__)
+// ELF only. A staged library leaves the godot_* entry points undefined and
+// expects dlopen to bind them against this extension. Godot loads the
+// extension without RTLD_GLOBAL, though, so on ELF its symbols are in no
+// scope a later dlopen searches, and every staged library fails with
+//
+//   undefined symbol: godot_packed_vec3_push
+//
+// (whichever entry point the loader reaches first). Re-opening our own
+// module with RTLD_NOLOAD | RTLD_GLOBAL maps nothing new; it only promotes
+// the already-loaded object to the global scope. Mach-O's dynamic_lookup
+// searches every loaded image regardless, and PE binds by DLL name at link
+// time (see make_build_tur), so neither needs this.
+void promote_self_to_global_scope() {
+    static bool done = false;
+    if (done) return;
+    done = true;
+    Dl_info info;
+    if (!dladdr(reinterpret_cast<void *>(&promote_self_to_global_scope), &info)
+        || !info.dli_fname)
+        return;
+    // The handle is deliberately kept: it is one more reference to a module
+    // that outlives every AOT image anyway.
+    dlopen(info.dli_fname, RTLD_NOW | RTLD_GLOBAL | RTLD_NOLOAD);
+}
+#else
+void promote_self_to_global_scope() {}
+#endif
+
 bool is_ws(char c) { return c == ' ' || c == '\t'; }
 
 void skip_ws(const char *&p, const char *end) {
@@ -172,6 +201,7 @@ std::unique_ptr<AotImage> AotImage::load(const std::string &lib_path,
     // the library doesn't actually export" up front instead of at first
     // dispatch. RTLD_LOCAL keeps per-script symbols isolated -- two scripts
     // exporting `_ready` will not collide.
+    promote_self_to_global_scope();
     image->handle_ = dlopen(lib_path.c_str(), RTLD_NOW | RTLD_LOCAL);
     if (!image->handle_) {
         const char *e = dlerror();
@@ -193,6 +223,11 @@ std::unique_ptr<AotImage> AotImage::load(const std::string &lib_path,
             return die(msg);
         }
         rec.fn_ptr = sym;
+        // Optional: an export with a non-scalar slot has no shim, and
+        // dispatch reports that at the call rather than failing the load.
+        void *shim = dlsym(image->handle_, (rec.mangled + "__ffi").c_str());
+        dlerror();
+        rec.ffi_shim = reinterpret_cast<decltype(rec.ffi_shim)>(shim);
     }
 
     return image;
