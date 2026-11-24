@@ -78,6 +78,14 @@ const Variant *variant_arena_lookup(int64_t tagged_handle) {
     return &g_arena[(size_t)idx];
 }
 
+bool variant_arena_replace(int64_t tagged_handle, const Variant &v) {
+    if (!variant_arena_is_handle(tagged_handle)) return false;
+    const uint64_t idx = ((uint64_t)tagged_handle) & ~TG_ARENA_TAG;
+    if (idx >= g_arena.size()) return false;
+    g_arena[(size_t)idx] = v;
+    return true;
+}
+
 VariantArenaFrame variant_arena_enter() {
     return VariantArenaFrame{g_arena.size(), g_str_arena.size()};
 }

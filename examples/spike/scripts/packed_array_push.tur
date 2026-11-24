@@ -1,0 +1,47 @@
+;; Regression: every (packed-*-push) must grow the array the handle names.
+;; A Packed*Array is a copy-on-write VALUE type, so a push that mutates a
+;; copy read out of the arena Variant is a silent no-op -- which is what all
+;; nine families did. Each array is handed back to the driver through
+;; set_meta so packed_array_push.gd can compare real contents.
+;; Attach to a Node; driven by packed_array_push.gd.
+
+(defn _ready []
+  (let [self (node/self)]
+    (let [a (packed-byte-new)]
+      (packed-byte-push a 222)
+      (packed-byte-push a 173)
+      (godot-call self "set_meta" "byte_size" (packed-byte-size a))
+      (godot-call self "set_meta" "byte" a))
+    (let [a (packed-int32-new)]
+      (packed-int32-push a 10)
+      (packed-int32-push a -20)
+      (packed-int32-push a 30)
+      (godot-call self "set_meta" "int32" a))
+    (let [a (packed-int64-new)]
+      (packed-int64-push a 4294967296)
+      (packed-int64-push a -7)
+      (godot-call self "set_meta" "int64" a))
+    (let [a (packed-float32-new)]
+      (packed-float32-push a 7.25)
+      (packed-float32-push a -0.5)
+      (godot-call self "set_meta" "float32" a))
+    (let [a (packed-float64-new)]
+      (packed-float64-push a 7.1)
+      (packed-float64-push a 3.25)
+      (godot-call self "set_meta" "float64" a))
+    (let [a (packed-string-new)]
+      (packed-string-push a "alpha")
+      (packed-string-push a "beta")
+      (godot-call self "set_meta" "string" a))
+    (let [a (packed-vec2-new)]
+      (packed-vec2-push a (node/vec2 1.0 0.5))
+      (packed-vec2-push a (node/vec2 0.5 1.0))
+      (godot-call self "set_meta" "vec2" a))
+    (let [a (packed-vec3-new)]
+      (packed-vec3-push a (node/vec3 1.0 2.0 3.5))
+      (packed-vec3-push a (node/vec3 -1.0 0.25 0.0))
+      (godot-call self "set_meta" "vec3" a))
+    (let [a (packed-color-new)]
+      (packed-color-push a (node/color 1.0 0.5 0.25 1.0))
+      (packed-color-push a (node/color 0.0 0.0 0.0 0.5))
+      (godot-call self "set_meta" "color" a))))

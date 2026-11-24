@@ -53,6 +53,13 @@ int64_t variant_arena_push(const Variant &v);
 // the handle is malformed / out of range / belongs to a popped frame.
 const Variant *variant_arena_lookup(int64_t tagged_handle);
 
+// Overwrite the Variant a tagged handle names; false if the handle is not
+// live. This is how a value-typed Variant is mutated in place: a
+// Packed*Array read out of a Variant is a copy-on-write COPY, so growing it
+// leaves the arena's Variant untouched unless the result is written back.
+// (Array and Dictionary are reference types and do not need this.)
+bool variant_arena_replace(int64_t tagged_handle, const Variant &v);
+
 // True iff the low bits look like an arena handle (tag bit set).
 inline bool variant_arena_is_handle(int64_t v) {
     return (((uint64_t)v) & TG_ARENA_TAG) != 0;

@@ -28,16 +28,16 @@
 
   ;; --- PackedVector2Array (vertex buffer use case) ------------------------
   (let [verts (packed-vec2-new)]
-    (packed-vec2-push verts (godot-vec2 0.0 0.0))
-    (packed-vec2-push verts (godot-vec2 1.0 0.5))
-    (packed-vec2-push verts (godot-vec2 0.5 1.0))
+    (packed-vec2-push verts (node/vec2 0.0 0.0))
+    (packed-vec2-push verts (node/vec2 1.0 0.5))
+    (packed-vec2-push verts (node/vec2 0.5 1.0))
     (godot-println "[t3d] verts size:")
     (godot-println (godot-num->str (packed-vec2-size verts)))
     (let [v1 (packed-vec2-get verts 1)]
       (godot-println "[t3d] verts[1].x:")
-      (godot-println (godot-num->str (godot-vec2-x v1)))
+      (godot-println (godot-num->str (node/vec2-x v1)))
       (godot-println "[t3d] verts[1].y:")
-      (godot-println (godot-num->str (godot-vec2-y v1)))))
+      (godot-println (godot-num->str (node/vec2-y v1)))))
 
   ;; --- RID inspection -- the engine owns these; we just read the id.
   ;; PhysicsServer2D.body_create returns an RID. We surface a fresh body
