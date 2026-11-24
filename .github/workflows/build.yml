@@ -168,11 +168,23 @@ jobs:
       # into the GDExtension .so, and ld rejects non-PIC objects in a shared
       # object (R_X86_64_TPOFF32 relocation against the TLS globals). It is a
       # no-op on macOS, which compiles PIC by default.
+      # -D_GNU_SOURCE is for turmeric v0.73.0 on ubuntu-22.04 and goes away
+      # with the pin's next move. Its JIT sources call dlsym(RTLD_DEFAULT),
+      # which glibc before 2.36 declares only under _GNU_SOURCE; turmeric asks
+      # for _DEFAULT_SOURCE alone and its own CI builds on ubuntu-latest, so
+      # nothing there noticed:
+      #
+      #   src/turi/jit_ffi.c:419:18: error: 'RTLD_DEFAULT' undeclared
+      #
+      # Fixed in turmeric (turmeric-lang/turmeric#1484) by defining it in the
+      # two files; until a release carries that, define it for the build. The
+      # Linux legs stay on 22.04 on purpose -- the shipped .so should load on
+      # the oldest glibc we can build against, not the newest.
       - name: Build libturi.a (macos/linux)
         if: matrix.platform != 'windows'
         working-directory: turmeric
         run: |
-          cmake -S . -B build-rel -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+          cmake -S . -B build-rel -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_C_FLAGS=-D_GNU_SOURCE
           cmake --build build-rel --target libturi -j
 
       # -G Ninja pins the generator explicitly. Without it CMake defaults to
