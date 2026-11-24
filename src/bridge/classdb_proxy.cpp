@@ -828,9 +828,12 @@ TuriValue tg_native_godot_dict_get_c(TuriEnv *env, TuriValue *args, uint32_t n, 
 
 // --- T3.D: PackedXxxArray + RID -------------------------------------------
 //
-// All PackedXxx and RID values live in the same arena. Packed* are
-// refcount-shared on the godot-cpp side, so a copied handle mutates the
-// shared backing store (same model the Dictionary/Array natives rely on).
+// All PackedXxx and RID values live in the same arena. Unlike Array and
+// Dictionary, a Packed*Array is a VALUE type with a copy-on-write body:
+// reading one out of a Variant yields a copy, and the first write to that
+// copy detaches it. So every mutating native builds the new array locally
+// and stores it back with variant_arena_replace -- without the write-back
+// the push is a silent no-op.
 // RID is small and value-typed; we expose it read-only.
 
 namespace {
@@ -920,6 +923,8 @@ TuriValue tg_native_godot_packed_byte_push(TuriEnv *env, TuriValue *args, uint32
     if (!vp || vp->get_type() != Variant::PACKED_BYTE_ARRAY) return turi_nil();
     PackedByteArray a = (PackedByteArray)*vp;
     a.push_back((uint8_t)(args[1].as_int & 0xff));
+    // `a` is a CoW copy of the arena Variant's array; write it back.
+    variant_arena_replace(args[0].as_int, Variant(a));
     return turi_nil();
 }
 
@@ -947,6 +952,8 @@ TuriValue tg_native_godot_packed_int32_push(TuriEnv *env, TuriValue *args, uint3
     if (!vp || vp->get_type() != Variant::PACKED_INT32_ARRAY) return turi_nil();
     PackedInt32Array a = (PackedInt32Array)*vp;
     a.push_back((int32_t)args[1].as_int);
+    // `a` is a CoW copy of the arena Variant's array; write it back.
+    variant_arena_replace(args[0].as_int, Variant(a));
     return turi_nil();
 }
 
@@ -974,6 +981,8 @@ TuriValue tg_native_godot_packed_int64_push(TuriEnv *env, TuriValue *args, uint3
     if (!vp || vp->get_type() != Variant::PACKED_INT64_ARRAY) return turi_nil();
     PackedInt64Array a = (PackedInt64Array)*vp;
     a.push_back((int64_t)args[1].as_int);
+    // `a` is a CoW copy of the arena Variant's array; write it back.
+    variant_arena_replace(args[0].as_int, Variant(a));
     return turi_nil();
 }
 
@@ -1003,6 +1012,8 @@ TuriValue tg_native_godot_packed_float32_push(TuriEnv *env, TuriValue *args, uin
     if (!vp || vp->get_type() != Variant::PACKED_FLOAT32_ARRAY) return turi_nil();
     PackedFloat32Array a = (PackedFloat32Array)*vp;
     a.push_back((float)f);
+    // `a` is a CoW copy of the arena Variant's array; write it back.
+    variant_arena_replace(args[0].as_int, Variant(a));
     return turi_nil();
 }
 
@@ -1032,6 +1043,8 @@ TuriValue tg_native_godot_packed_float64_push(TuriEnv *env, TuriValue *args, uin
     if (!vp || vp->get_type() != Variant::PACKED_FLOAT64_ARRAY) return turi_nil();
     PackedFloat64Array a = (PackedFloat64Array)*vp;
     a.push_back((double)f);
+    // `a` is a CoW copy of the arena Variant's array; write it back.
+    variant_arena_replace(args[0].as_int, Variant(a));
     return turi_nil();
 }
 
@@ -1063,6 +1076,8 @@ TuriValue tg_native_godot_packed_string_push(TuriEnv *env, TuriValue *args, uint
     if (!vp || vp->get_type() != Variant::PACKED_STRING_ARRAY) return turi_nil();
     PackedStringArray a = (PackedStringArray)*vp;
     a.push_back(String(args[1].as_cstr));
+    // `a` is a CoW copy of the arena Variant's array; write it back.
+    variant_arena_replace(args[0].as_int, Variant(a));
     return turi_nil();
 }
 
@@ -1096,6 +1111,8 @@ TuriValue tg_native_godot_packed_vec2_push(TuriEnv *env, TuriValue *args, uint32
     if (!elem || elem->get_type() != Variant::VECTOR2) return turi_nil();
     PackedVector2Array a = (PackedVector2Array)*vp;
     a.push_back((Vector2)*elem);
+    // `a` is a CoW copy of the arena Variant's array; write it back.
+    variant_arena_replace(args[0].as_int, Variant(a));
     return turi_nil();
 }
 
@@ -1125,6 +1142,8 @@ TuriValue tg_native_godot_packed_vec3_push(TuriEnv *env, TuriValue *args, uint32
     if (!elem || elem->get_type() != Variant::VECTOR3) return turi_nil();
     PackedVector3Array a = (PackedVector3Array)*vp;
     a.push_back((Vector3)*elem);
+    // `a` is a CoW copy of the arena Variant's array; write it back.
+    variant_arena_replace(args[0].as_int, Variant(a));
     return turi_nil();
 }
 
@@ -1154,6 +1173,8 @@ TuriValue tg_native_godot_packed_color_push(TuriEnv *env, TuriValue *args, uint3
     if (!elem || elem->get_type() != Variant::COLOR) return turi_nil();
     PackedColorArray a = (PackedColorArray)*vp;
     a.push_back((Color)*elem);
+    // `a` is a CoW copy of the arena Variant's array; write it back.
+    variant_arena_replace(args[0].as_int, Variant(a));
     return turi_nil();
 }
 
