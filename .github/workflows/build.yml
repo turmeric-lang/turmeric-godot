@@ -64,7 +64,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: macos-14,          platform: macos,   arch: arm64,  lib_suffix: framework, scons_extra: "" }
+          # macos-latest, not a numbered image. This leg said macos-14 until
+          # that label stopped being served: from 2026-11 every job on it was
+          # cancelled in the second it was created, with no runner assigned,
+          # which turned each run -- main's included -- "cancelled" rather
+          # than red and so easy to miss. turmeric's own CI uses macos-latest
+          # (arm64) for the same reason.
+          - { os: macos-latest,      platform: macos,   arch: arm64,  lib_suffix: framework, scons_extra: "" }
           - { os: ubuntu-22.04,      platform: linux,   arch: x86_64, lib_suffix: so,        scons_extra: "" }
           - { os: ubuntu-22.04-arm,  platform: linux,   arch: arm64,  lib_suffix: so,        scons_extra: "" }
           # use_mingw=yes is not optional. godot-cpp's windows tool picks MSVC
